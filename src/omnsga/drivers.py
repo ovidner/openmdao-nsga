@@ -52,7 +52,8 @@ class GenericNsgaDriver(Driver):
                     meta_value["type"] = VariableType.INTEGER
                 else:
                     meta_value["type"] = VariableType.CONTINUOUS
-                meta_value["shape"] = np.shape(meta_value["lower"])
+            if "shape" not in meta_value:
+                meta_value["shape"] = (meta_value["size"],)
 
         self.num_objectives = sum(
             obj["size"] for obj in problem.model.get_objectives().values()
