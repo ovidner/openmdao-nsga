@@ -4,6 +4,7 @@ from itertools import chain
 
 import numpy as np
 from deap import algorithms, base, tools
+from openmdao.api import DOEDriver
 from openmdao.core.driver import Driver, RecordingDebugging
 
 from .utils import (
@@ -26,7 +27,65 @@ def default_nsga2_population_size(driver):
     return driver.individual_size * driver.num_objectives
 
 
-class GenericNsgaDriver(Driver):
+class DiscreteDriverMixin:
+    def set_design_var(self, name, value):
+        # Patched version of the method from openmdao.core.driver.Driver,
+        # supporting non-int discrete variables
+        """
+        Set the value of a design variable.
+
+        Parameters
+        ----------
+        name : str
+            Global pathname of the design variable.
+        value : float or ndarray
+            Value for the design variable.
+        """
+        problem = self._problem()
+        meta = self._designvars[name]
+
+        src_name = meta["ivc_source"]
+
+        # if the value is not local, don't set the value
+        if (
+            src_name in self._remote_dvs
+            and problem.model._owning_rank[src_name] != problem.comm.rank
+        ):
+            return
+
+        indices = meta["indices"]
+        if indices is None:
+            indices = slice(None)
+
+        if name in self._designvars_discrete:
+            problem.model._discrete_outputs[src_name] = value
+
+        elif problem.model._outputs._contains_abs(src_name):
+            desvar = problem.model._outputs._abs_get_val(src_name)
+            if src_name in self._dist_driver_vars:
+                loc_idxs, _, dist_idxs = self._dist_driver_vars[src_name]
+            else:
+                loc_idxs = indices
+                dist_idxs = slice(None)
+
+            desvar[loc_idxs] = np.atleast_1d(value)[dist_idxs]
+
+            # Undo driver scaling when setting design var values into model.
+            if self._has_scaling:
+                scaler = meta["total_scaler"]
+                if scaler is not None:
+                    desvar[loc_idxs] *= 1.0 / scaler
+
+                adder = meta["total_adder"]
+                if adder is not None:
+                    desvar[loc_idxs] -= adder
+
+
+class DiscreteDoeDriver(DiscreteDriverMixin, DOEDriver):
+    pass
+
+
+class GenericNsgaDriver(DiscreteDriverMixin, Driver):
     def _declare_options(self):
         self.supports["integer_design_vars"] = True
         # self.supports["ordinal_design_vars"] = True
@@ -173,50 +232,6 @@ class GenericNsgaDriver(Driver):
         )
 
         return False
-
-    def set_design_var(self, name, value):
-        # Patched version of the method from openmdao.core.driver.Driver,
-        # supporting non-int discrete variables
-        """
-        Set the value of a design variable.
-
-        Parameters
-        ----------
-        name : str
-            Global pathname of the design variable.
-        value : float or ndarray
-            Value for the design variable.
-        """
-        problem = self._problem()
-
-        # if the value is not local, don't set the value
-        if (
-            name in self._remote_dvs
-            and problem.model._owning_rank[name] != problem.comm.rank
-        ):
-            return
-
-        meta = self._designvars[name]
-        indices = meta["indices"]
-        if indices is None:
-            indices = slice(None)
-
-        if name in self._designvars_discrete:
-            problem.model._discrete_outputs[name] = value
-
-        else:
-            desvar = problem.model._outputs._views_flat[name]
-            desvar[indices] = value
-
-            # Undo driver scaling when setting design var values into model.
-            if self._has_scaling:
-                scaler = meta["scaler"]
-                if scaler is not None:
-                    desvar[indices] *= 1.0 / scaler
-
-                adder = meta["adder"]
-                if adder is not None:
-                    desvar[indices] -= adder
 
 
 class Nsga2Driver(GenericNsgaDriver):
