@@ -3,6 +3,7 @@ from copy import deepcopy
 from itertools import chain
 
 import numpy as np
+import pygmo
 from deap import algorithms, base, tools
 from openmdao.api import DOEDriver
 from openmdao.core.driver import Driver, RecordingDebugging
@@ -368,10 +369,39 @@ def prep_ind(ind, gen):
     return ind
 
 
+def ind_stats_with_cv(ind):
+    """
+    Returns an individual `ind`'s fitness values AND constraint violation,
+    for use in statistics.
+
+    In contrast to the native DEAP function that does this, we make sure that
+    all objectives are scaled for implicit *minimization*. Why? Most functions
+    you might want to use for statistics also do, OpenMDAO does it, and I simply
+    prefer that way of thinking. Sue me.
+    """
+    fitness_values = (x * 1 for x in ind.fitness.values)
+    return [*fitness_values, ind.fitness.constraint_violation]
+
+
+def pop_hv(algorithm=None):
+    def func(fitness_values):
+        hv = pygmo.hypervolume(fitness_values)
+        ref_point = hv.refpoint(offset=1)
+        # https://esa.github.io/pygmo/tutorials/advanced_hypervolume_computation_and_analysis.html#pushing-efficiency-further
+        hv.copy_points = False
+        # hv.set_verify(False)
+
+        if algorithm:
+            return hv.compute(ref_point, hv_algo=algorithm)
+        else:
+            return hv.compute(ref_point)
+
+    return func
+
+
 def nsga_main(population, toolbox, mu, halloffame=None, verbose=__debug__):
-    stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("mean", np.mean, axis=0)
-    stats.register("std", np.std, axis=0)
+    stats = tools.Statistics(ind_stats_with_cv)
+    stats.register("hv", pop_hv())
     stats.register("min", np.min, axis=0)
     stats.register("max", np.max, axis=0)
 
