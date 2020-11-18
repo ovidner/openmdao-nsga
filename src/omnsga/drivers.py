@@ -7,6 +7,7 @@ from deap import algorithms, base, tools
 from openmdao.api import DOEDriver
 from openmdao.core.driver import Driver, RecordingDebugging
 
+from .criteria import MaxEvaluationsCriterion
 from .utils import (
     ConstraintDominatedFitness,
     IndividualBounds,
@@ -92,13 +93,15 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         # self.supports["nominal_design_vars"] = True
         self.supports["multiple_objectives"] = True
 
-        self.options.declare("generation_count", default=100)
         self.options.declare("min_population_size", default=None)
         self.options.declare("crossover_prob", default=None)
         self.options.declare("mutation_prob", default=None)
         self.options.declare("random_seed", default=None)
         self.options.declare("verbose", default=False, types=bool)
         self.options.declare("use_cache", default=True, types=bool)
+        self.options.declare(
+            "termination_criterion", default=MaxEvaluationsCriterion(5000)
+        )
 
     def _setup_driver(self, problem):
         super()._setup_driver(problem)
@@ -137,6 +140,7 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         mutate_indpb = 1.0 / self.individual_size
 
         toolbox = base.Toolbox()
+        toolbox.register("termination_criterion", self.options["termination_criterion"])
         toolbox.register(
             "population",
             init_population,
@@ -227,7 +231,6 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             population=start_population,
             toolbox=self.toolbox,
             mu=self.population_size,
-            ngen=self.options["generation_count"],
             verbose=self.options["verbose"],
         )
 
@@ -365,7 +368,7 @@ def prep_ind(ind, gen):
     return ind
 
 
-def nsga_main(population, toolbox, mu, ngen, halloffame=None, verbose=__debug__):
+def nsga_main(population, toolbox, mu, halloffame=None, verbose=__debug__):
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("mean", np.mean, axis=0)
     stats.register("std", np.std, axis=0)
@@ -388,13 +391,15 @@ def nsga_main(population, toolbox, mu, ngen, halloffame=None, verbose=__debug__)
     if halloffame is not None:
         halloffame.update(population)
 
+    gen = 0
     # Compile statistics about the population
-    logbook.record(gen=0, nevals=len(invalid_ind), **stats.compile(population))
+    logbook.record(gen=gen, nevals=len(invalid_ind), **stats.compile(population))
     if verbose:
         print(logbook.stream)
 
     # Begin the generational process
-    for gen in range(1, ngen + 1):
+    while not toolbox.termination_criterion(logbook, population):
+        gen += 1
         # Vary the population
         offspring = toolbox.vary(population)
 
