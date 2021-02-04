@@ -60,6 +60,7 @@ packages:
 - xarray
 - pygmo
 - openmdao
+- openmdao-scop
 - deap
 - pytest
 - hypothesis
@@ -67,8 +68,6 @@ packages:
 - flake8
 - flake8-isort
 - pdbpp
-- pip:
-  - git+https://github.com/ovidner/openmdao-scop.git@v0.2#egg=openmdao-scop
 
 #
 # In the channels section, list any Conda channel URLs to be searched
@@ -81,6 +80,7 @@ packages:
 #
 channels:
 - conda-forge
+- ovidner
 
 #
 # In the platforms section, list platforms the project should work on
