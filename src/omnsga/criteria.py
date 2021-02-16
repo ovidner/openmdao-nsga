@@ -18,7 +18,7 @@ class MaxGenerationsCriterion(Criterion):
     max_generations: int
 
     def __call__(self, logbook, population):
-        return logbook.select("gen")[-1] >= self.max_generations
+        return len(logbook.select("gen")) >= self.max_generations
 
 
 @dataclasses.dataclass(frozen=True)
