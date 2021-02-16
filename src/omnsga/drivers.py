@@ -116,7 +116,15 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
                 else:
                     meta_value["type"] = VariableType.CONTINUOUS
             if "shape" not in meta_value:
-                meta_value["shape"] = (meta_value["size"],)
+                # FIXME: the shape/size system is broken/inconsistent in OpenMDAO.
+                # I'm sick and tired of patching things in different places.
+                # Submit a PR to OpenMDAO.
+                size = meta_value["size"]
+                # We want scalars to be represented in one way and one way only.
+                meta_value["shape"] = (size,) if size > 1 else ()
+            # Having a (0,) shape wouldn't make sense for a design variable.
+            # Additionally, it will just break assumptions in the driver.
+            assert meta_value["shape"] != (0,)
 
         self.num_objectives = sum(
             obj["size"] for obj in problem.model.get_objectives().values()
