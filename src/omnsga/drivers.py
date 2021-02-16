@@ -26,7 +26,7 @@ from .utils import (
 
 
 def default_nsga2_population_size(driver):
-    return driver.individual_size * driver.num_objectives
+    return driver.individual_size * driver.num_objectives * 2
 
 
 class DiscreteDriverMixin:
