@@ -67,7 +67,7 @@ jobs:
         path: conda-bld
     - name: Build the test environment
       run: |
-          conda create -y -n test-env -c conda-bld python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} openmdao-nsga
+        conda create -y -n test-env -c ./conda-bld python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} openmdao-nsga
     - name: Run the tests
       run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
