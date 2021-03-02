@@ -68,6 +68,8 @@ packages:
 - flake8
 - flake8-isort
 - pdbpp
+- pip:
+  - pymop
 
 #
 # In the channels section, list any Conda channel URLs to be searched
