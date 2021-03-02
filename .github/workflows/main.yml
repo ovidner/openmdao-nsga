@@ -54,13 +54,9 @@ jobs:
       id: conda-conf
       run: |
         echo "::set-output name=root::$CONDA"
-    - name: Add Conda to system path
-      if: runner.os == 'Windows'
-      run: |
-        echo $CONDA\Scripts >> $GITHUB_PATH
-        echo $GITHUB_PATH
     - name: Setup Conda
       run: |
+        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
         conda config --append channels conda-forge
     - name: Retrieve the source code
       uses: actions/checkout@v2
@@ -74,8 +70,8 @@ jobs:
           conda create -y -n test-env -c conda-bld python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} openmdao-nsga
     - name: Run the tests
       run: |
-          conda activate test-env
-          pytest
+        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+        conda run -n test-env pytest
 
   upload:
     needs: test
