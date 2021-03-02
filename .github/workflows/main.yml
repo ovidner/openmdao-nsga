@@ -55,7 +55,7 @@ jobs:
       run: |
         echo "::set-output name=root::$CONDA"
     - name: Add Conda to system path
-      if: runner.os == "Windows"
+      if: runner.os == 'Windows'
       run: |
         echo $CONDA\Scripts >> $GITHUB_PATH
         echo $GITHUB_PATH
