@@ -68,10 +68,10 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: package-${{ github.sha }}
-        path: ${{ steps.conda-conf.outputs.root }}/conda-bld
+        path: conda-bld
     - name: Build the test environment
       run: |
-          conda create -y -n test-env python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} local::openmdao-nsga
+          conda create -y -n test-env -c conda-bld python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} openmdao-nsga
     - name: Run the tests
       run: |
           conda activate test-env
