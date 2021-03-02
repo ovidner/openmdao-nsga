@@ -70,6 +70,7 @@ jobs:
           - 3.7
     steps:
       - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -y anaconda-project
       - name: Retrieve the source code
         uses: actions/checkout@v2
       - name: Download the build artifact
