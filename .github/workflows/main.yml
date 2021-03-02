@@ -7,7 +7,7 @@ jobs:
   configuration-dump:
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,13 +17,9 @@ jobs:
           - ubuntu-latest
           - windows-latest
     steps:
-      - run: |
-          [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-          [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
-          conda create -y -p ./conda conda anaconda-project
-      - run: |
-          source ./conda/etc/profile.d/conda.sh
-          anaconda-project init
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -y anaconda-project
+      - run: anaconda-project init
 
   package:
     runs-on: ubuntu-latest
