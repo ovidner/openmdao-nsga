@@ -78,6 +78,7 @@ jobs:
     - name: Setup Conda
       run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+        [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
         conda config --append channels conda-forge
     - name: Retrieve the source code
       uses: actions/checkout@v2
