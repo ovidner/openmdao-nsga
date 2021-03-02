@@ -7,27 +7,28 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
+    - name: Install build dependencies
+      id: conda-conf
+      run: |
+        conda config --append channels conda-forge
+        conda install -y anaconda-project conda-build
+        echo "::set-output name=root::$CONDA"
     - name: Retrieve the source code
       uses: actions/checkout@v2
       with:
         # Include all history to get tags etc.
         fetch-depth: 0
-    - name: Install build dependencies
-      run: |
-        conda config --append channels conda-forge
-        conda install -y anaconda-project conda-build
-    - run: echo $CONDA
     - name: Build the package
       run: conda build conda --no-test
     - name: Reduce the size of the build artifact
-      run: rm -rf /usr/share/miniconda/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
+      run: rm -rf ${{ steps.conda-conf.output.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
     - name: Upload the build artifact
       uses: actions/upload-artifact@v2
       with:
         name: package-${{ github.sha }}
-        path: /usr/share/miniconda/conda-bld
+        path: ${{ steps.conda-conf.output.root }}/conda-bld
 
-  tests:
+  test:
     defaults:
       run:
         shell: bash
@@ -49,25 +50,31 @@ jobs:
         - 3.6
         - 3.7
     steps:
+    - name: Setup Conda
+      id: conda-conf
+      run: |
+        echo "::set-output name=root::$CONDA"
+        source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
+        conda config --append channels conda-forge
     - name: Retrieve the source code
       uses: actions/checkout@v2
     - name: Download the build artifact
       uses: actions/download-artifact@v2
       with:
         name: package-${{ github.sha }}
-        path: /usr/share/miniconda/conda-bld
+        path: ${{ steps.conda-conf.output.root }}/conda-bld
     - name: Build the test environment
       run: |
-          source $CONDA/etc/profile.d/conda.sh
+          source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
           conda create -y -n test-env python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} local::openmdao-nsga
     - name: Run the tests
       run: |
-          source $CONDA/etc/profile.d/conda.sh
+          source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
           conda activate test-env
           pytest
 
   upload:
-    needs: tests
+    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
