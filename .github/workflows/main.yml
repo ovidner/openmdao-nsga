@@ -21,12 +21,12 @@ jobs:
     - name: Build the package
       run: conda build conda --no-test
     - name: Reduce the size of the build artifact
-      run: rm -rf ${{ steps.conda-conf.output.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
+      run: rm -rf ${{ steps.conda-conf.outputs.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
     - name: Upload the build artifact
       uses: actions/upload-artifact@v2
       with:
         name: package-${{ github.sha }}
-        path: ${{ steps.conda-conf.output.root }}/conda-bld
+        path: ${{ steps.conda-conf.outputs.root }}/conda-bld
 
   test:
     defaults:
@@ -54,7 +54,7 @@ jobs:
       id: conda-conf
       run: |
         echo "::set-output name=root::$CONDA"
-        source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
+        source ${{ steps.conda-conf.outputs.root }}/etc/profile.d/conda.sh
         conda config --append channels conda-forge
     - name: Retrieve the source code
       uses: actions/checkout@v2
@@ -62,14 +62,14 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: package-${{ github.sha }}
-        path: ${{ steps.conda-conf.output.root }}/conda-bld
+        path: ${{ steps.conda-conf.outputs.root }}/conda-bld
     - name: Build the test environment
       run: |
-          source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
+          source ${{ steps.conda-conf.outputs.root }}/etc/profile.d/conda.sh
           conda create -y -n test-env python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} local::openmdao-nsga
     - name: Run the tests
       run: |
-          source ${{ steps.conda-conf.output.root }}/etc/profile.d/conda.sh
+          source ${{ steps.conda-conf.outputs.root }}/etc/profile.d/conda.sh
           conda activate test-env
           pytest
 
