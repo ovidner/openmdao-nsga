@@ -1,8 +1,8 @@
 name: Build and test
 on:
-- push
-- pull_request
-- release
+  - push
+  - pull_request
+  - release
 jobs:
   configuration-dump:
     defaults:
@@ -28,26 +28,26 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-    - name: Install build dependencies
-      id: conda-conf
-      run: |
-        conda config --append channels conda-forge
-        conda install -y anaconda-project conda-build conda-verify
-        echo "::set-output name=root::$CONDA"
-    - name: Retrieve the source code
-      uses: actions/checkout@v2
-      with:
-        # Include all history to get tags etc.
-        fetch-depth: 0
-    - name: Build the package
-      run: conda build conda-recipe --no-test
-    - name: Reduce the size of the build artifact
-      run: rm -rf ${{ steps.conda-conf.outputs.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
-    - name: Upload the build artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: package-${{ github.sha }}
-        path: ${{ steps.conda-conf.outputs.root }}/conda-bld
+      - name: Install build dependencies
+        id: conda-conf
+        run: |
+          conda config --append channels conda-forge
+          conda install -y anaconda-project conda-build conda-verify
+          echo "::set-output name=root::$CONDA"
+      - name: Retrieve the source code
+        uses: actions/checkout@v2
+        with:
+          # Include all history to get tags etc.
+          fetch-depth: 0
+      - name: Build the package
+        run: conda build conda-recipe --no-test
+      - name: Reduce the size of the build artifact
+        run: rm -rf ${{ steps.conda-conf.outputs.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: package-${{ github.sha }}
+          path: ${{ steps.conda-conf.outputs.root }}/conda-bld
 
   test:
     defaults:
@@ -59,17 +59,17 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - macos-latest
-        - ubuntu-latest
-        - windows-latest
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
         pyver:
-        - 3.7
-        - 3.8
-        - 3.9
+          - 3.7
+          - 3.8
+          - 3.9
         omver:
-        - 3.5
-        - 3.6
-        - 3.7
+          - 3.5
+          - 3.6
+          - 3.7
     steps:
     - name: Get Conda configuration
       id: conda-conf
@@ -106,19 +106,19 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
-    - name: Retrieve the source code
-      uses: actions/checkout@v2
-    - name: Download the build artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: package-${{ github.sha }}
-        path: conda-bld
-    - name: Upload to anaconda.org
-      env:
-        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
-        GITHUB_REF: ${{ github.ref }}
-      run: |
-        source $CONDA/bin/activate
-        conda install -y anaconda-client
-        [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user ctools $LABEL conda-bld/*/*.tar.bz2 --force
+      - name: Retrieve the source code
+        uses: actions/checkout@v2
+      - name: Download the build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: package-${{ github.sha }}
+          path: conda-bld
+      - name: Upload to anaconda.org
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          source $CONDA/bin/activate
+          conda install -y anaconda-client
+          [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
+          anaconda --verbose --token $ANACONDA_TOKEN upload --user ctools $LABEL conda-bld/*/*.tar.bz2 --force
