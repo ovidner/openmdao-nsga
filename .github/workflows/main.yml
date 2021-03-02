@@ -50,10 +50,12 @@ jobs:
         - 3.6
         - 3.7
     steps:
-    - name: Setup Conda
+    - name: Get Conda configuration
       id: conda-conf
       run: |
         echo "::set-output name=root::$CONDA"
+    - name: Setup Conda
+      run: |
         source ${{ steps.conda-conf.outputs.root }}/etc/profile.d/conda.sh
         conda config --append channels conda-forge
     - name: Retrieve the source code
