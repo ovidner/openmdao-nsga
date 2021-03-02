@@ -32,7 +32,7 @@ jobs:
       id: conda-conf
       run: |
         conda config --append channels conda-forge
-        conda install -y anaconda-project conda-build
+        conda install -y anaconda-project conda-build conda-verify
         echo "::set-output name=root::$CONDA"
     - name: Retrieve the source code
       uses: actions/checkout@v2
@@ -80,6 +80,7 @@ jobs:
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
         [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
         conda config --append channels conda-forge
+        conda install -y anaconda-project
     - name: Retrieve the source code
       uses: actions/checkout@v2
     - name: Download the build artifact
@@ -90,11 +91,15 @@ jobs:
     - name: Build the test environment
       run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        conda create -y -n test-env -c ./conda-bld python=${{ matrix.pyver }} openmdao=${{ matrix.omver }} openmdao-nsga
+        anaconda-project prepare
+        anaconda-project run conda install -y -c ./conda-bld \
+          openmdao-nsga \
+          python=${{ matrix.pyver }} \
+          openmdao=${{ matrix.omver }}
     - name: Run the tests
       run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        conda run -n test-env pytest
+        anaconda-project run tests
 
   upload:
     needs: test
