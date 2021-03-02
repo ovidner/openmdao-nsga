@@ -40,7 +40,7 @@ jobs:
         # Include all history to get tags etc.
         fetch-depth: 0
     - name: Build the package
-      run: conda build conda --no-test
+      run: conda build conda-recipe --no-test
     - name: Reduce the size of the build artifact
       run: rm -rf ${{ steps.conda-conf.outputs.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
     - name: Upload the build artifact
