@@ -22,33 +22,35 @@ jobs:
       - run: anaconda-project init
 
   package:
+    defaults:
+      run:
+        shell: bash -l {0}
     runs-on: ubuntu-latest
     steps:
+      - uses: conda-incubator/setup-miniconda@v2
       - name: Install build dependencies
-        id: conda-conf
         run: |
           conda config --append channels conda-forge
-          conda install -y anaconda-project conda-build conda-verify
-          echo "::set-output name=root::$CONDA"
+          conda install -y conda-build conda-verify
       - name: Retrieve the source code
         uses: actions/checkout@v2
         with:
           # Include all history to get tags etc.
           fetch-depth: 0
       - name: Build the package
-        run: conda build conda-recipe --no-test
+        run: conda build conda-recipe --no-test --output-folder build-output
       - name: Reduce the size of the build artifact
-        run: rm -rf ${{ steps.conda-conf.outputs.root }}/conda-bld/{git_cache,work,anaconda-project*,*/.cache}
+        run: rm -rf build-output/*/.cache
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
         with:
           name: package-${{ github.sha }}
-          path: ${{ steps.conda-conf.outputs.root }}/conda-bld
+          path: build-output
 
   test:
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     runs-on: ${{ matrix.os }}
     needs: package
     strategy:
@@ -67,35 +69,24 @@ jobs:
           - 3.6
           - 3.7
     steps:
-    - name: Get Conda configuration
-      id: conda-conf
-      run: |
-        echo "::set-output name=root::$CONDA"
-    - name: Setup Conda
-      run: |
-        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
-        conda config --append channels conda-forge
-        conda install -y anaconda-project
-    - name: Retrieve the source code
-      uses: actions/checkout@v2
-    - name: Download the build artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: package-${{ github.sha }}
-        path: conda-bld
-    - name: Build the test environment
-      run: |
-        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        anaconda-project prepare
-        anaconda-project run conda install -y -c ./conda-bld \
-          openmdao-nsga \
-          python=${{ matrix.pyver }} \
-          openmdao=${{ matrix.omver }}
-    - name: Run the tests
-      run: |
-        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        anaconda-project run tests
+      - uses: conda-incubator/setup-miniconda@v2
+      - name: Retrieve the source code
+        uses: actions/checkout@v2
+      - name: Download the build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: package-${{ github.sha }}
+          path: build-output
+      - name: Build the test environment
+        run: |
+          anaconda-project prepare
+          anaconda-project run conda install -y -c ./build-output \
+            openmdao-nsga \
+            python=${{ matrix.pyver }} \
+            openmdao=${{ matrix.omver }}
+      - name: Run the tests
+        run: |
+          anaconda-project run tests
 
   upload:
     needs: test
