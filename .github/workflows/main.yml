@@ -23,7 +23,9 @@ jobs:
     - run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
         [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
-        conda config --show
+        conda config --append channels conda-forge
+        conda install -y anaconda-project
+        conda run anaconda-project init
 
   package:
     runs-on: ubuntu-latest
