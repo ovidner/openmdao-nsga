@@ -5,6 +5,9 @@ on:
 - release
 jobs:
   configuration-dump:
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -16,6 +19,10 @@ jobs:
     steps:
     - run: |
         [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+        conda config --show
+    - run: |
+        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+        [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
         conda config --show
 
   package:
