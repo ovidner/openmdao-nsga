@@ -4,6 +4,20 @@ on:
 - pull_request
 - release
 jobs:
+  configuration-dump:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - macos-latest
+        - ubuntu-latest
+        - windows-latest
+    steps:
+    - run: |
+        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+        conda config --show
+
   package:
     runs-on: ubuntu-latest
     steps:
