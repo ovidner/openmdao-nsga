@@ -25,8 +25,8 @@ description:
 # Use `anaconda-project add-command` to add commands.
 #
 commands:
-  setup: {windows: pip install -e %PROJECT_DIR%, env_spec: default}
-  tests: {windows: pytest, env_spec: default}
+  setup: {windows: pip install -e %PROJECT_DIR%, unix: pip install -e $PROJECT_DIR, env_spec: default}
+  tests: {windows: pytest, unix: pytest, env_spec: default}
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -89,8 +89,8 @@ channels:
 #
 platforms:
 - win-64
-#- linux-64
-#- osx-64
+- linux-64
+- osx-64
 
 #
 # You can define multiple, named environment specs.
