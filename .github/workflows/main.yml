@@ -13,19 +13,17 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - macos-latest
-        - ubuntu-latest
-        - windows-latest
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
     steps:
-    - run: |
-        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        conda config --show
-    - run: |
-        [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
-        [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
-        conda config --append channels conda-forge
-        conda install -y anaconda-project
-        conda run anaconda-project init
+      - run: |
+          [ $RUNNER_OS == Windows ] && source "$CONDA\etc\profile.d\conda.sh"
+          [ $RUNNER_OS == macOS ] && echo "pkgs_dirs: [~/.conda/pkgs]" | conda config --stdin
+          conda create -y -p ./conda conda anaconda-project
+      - run: |
+          source ./conda/etc/profile.d/conda.sh
+          anaconda-project init
 
   package:
     runs-on: ubuntu-latest
