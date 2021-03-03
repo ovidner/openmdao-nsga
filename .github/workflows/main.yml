@@ -33,53 +33,6 @@ jobs:
           name: package-${{ github.sha }}
           path: build-output
 
-  test:
-    defaults:
-      run:
-        shell: bash -l {0}
-    runs-on: ${{ matrix.os }}
-    needs: package
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-        pyver:
-          - 3.7
-          - 3.8
-          - 3.9
-        omver:
-          - 3.5
-          - 3.6
-          - 3.7
-    steps:
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          channels: ovidner,conda-forge,defaults
-          channel-priority: strict
-      - name: Retrieve the source code
-        uses: actions/checkout@v2
-      - name: Download the build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: package-${{ github.sha }}
-          path: build-output
-      - name: Build the test environment
-        run: |
-          conda install -y -c ./build-output \
-            openmdao-nsga \
-            python=${{ matrix.pyver }} \
-            openmdao=${{ matrix.omver }} \
-            pytest \
-            hypothesis \
-            openmdao-scop
-          pip install pymop
-      - name: Run the tests
-        run: |
-          pytest
-
   upload:
     # TODO: fix the tests so that I can't shoot myself in the foot too bad
     # needs: test
