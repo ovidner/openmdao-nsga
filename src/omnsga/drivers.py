@@ -293,6 +293,8 @@ class Nsga3Driver(GenericNsgaDriver):
             ref_points=ref_points,
             # The "standard" non-dominated sort algorithm uses Fitness.dominates,
             # which we have modified for constraint-domination.
+            # TODO: this might not be needed. We apply the constraint-domination
+            # in the modified variational operator's internal tournament selection
             nd="standard",
         )
 
