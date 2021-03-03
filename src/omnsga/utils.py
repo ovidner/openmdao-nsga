@@ -242,7 +242,7 @@ def convert_individual_to_design_vars(
                 a = discrete_value_mappings[name][arr_index][index]
                 values[arr_index] = a
         assert values.shape == shape
-        design_vars[name] = values
+        design_vars[name] = values if shape else values.item()
         ind = ind[ind_items:]
 
     return design_vars
