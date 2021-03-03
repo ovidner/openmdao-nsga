@@ -95,23 +95,25 @@ jobs:
           pytest
 
   upload:
-    needs: test
+    # TODO: fix the tests so that I can't shoot myself in the foot too bad
+    # needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    # if: github.event_name == 'release'
     steps:
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -y anaconda-client
       - name: Retrieve the source code
         uses: actions/checkout@v2
       - name: Download the build artifacts
         uses: actions/download-artifact@v2
         with:
           name: package-${{ github.sha }}
-          path: conda-bld
+          path: build-output
       - name: Upload to anaconda.org
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+          ANACONDA_USER: ovidner
           GITHUB_REF: ${{ github.ref }}
         run: |
-          source $CONDA/bin/activate
-          conda install -y anaconda-client
           [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
-          anaconda --verbose --token $ANACONDA_TOKEN upload --user ctools $LABEL conda-bld/*/*.tar.bz2 --force
+          anaconda upload --verbose --user $ANACONDA_USER --token $ANACONDA_TOKEN $LABEL build-output/*/*.tar.bz2
