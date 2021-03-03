@@ -10,6 +10,9 @@ jobs:
         shell: bash -l {0}
     runs-on: ubuntu-latest
     steps:
+      - run: echo $ANACONDA_TOKEN
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: ovidner,conda-forge,defaults
