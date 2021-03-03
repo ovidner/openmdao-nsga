@@ -73,7 +73,6 @@ jobs:
         with:
           channels: ovidner,conda-forge,defaults
           channel-priority: strict
-      - run: conda install -y anaconda-project
       - name: Retrieve the source code
         uses: actions/checkout@v2
       - name: Download the build artifact
@@ -83,14 +82,17 @@ jobs:
           path: build-output
       - name: Build the test environment
         run: |
-          anaconda-project prepare
-          anaconda-project run conda install -y -c ./build-output \
+          conda install -y -c ./build-output \
             openmdao-nsga \
             python=${{ matrix.pyver }} \
-            openmdao=${{ matrix.omver }}
+            openmdao=${{ matrix.omver }} \
+            pytest \
+            hypothesis \
+            openmdao-scop
+          pip install pymop
       - name: Run the tests
         run: |
-          anaconda-project run tests
+          pytest
 
   upload:
     needs: test
