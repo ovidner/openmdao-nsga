@@ -97,6 +97,7 @@ jobs:
   upload:
     # TODO: fix the tests so that I can't shoot myself in the foot too bad
     # needs: test
+    needs: package
     runs-on: ubuntu-latest
     # if: github.event_name == 'release'
     steps:
