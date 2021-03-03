@@ -60,7 +60,7 @@ downloads: {}
 # Use `anaconda-project add-packages` to add packages.
 #
 packages:
-  - python
+  - python=3.7
   - numpy
   - pandas
   - xarray
