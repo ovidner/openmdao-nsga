@@ -83,6 +83,9 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     # if: github.event_name == 'release'
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -y anaconda-client
