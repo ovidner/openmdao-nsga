@@ -4,23 +4,6 @@ on:
   - pull_request
   - release
 jobs:
-  configuration-dump:
-    defaults:
-      run:
-        shell: bash -l {0}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-    steps:
-      - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install -y anaconda-project
-      - run: anaconda-project init
-
   package:
     defaults:
       run:
