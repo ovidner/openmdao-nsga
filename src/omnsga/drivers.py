@@ -103,6 +103,7 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         self.options.declare(
             "termination_criterion", default=MaxEvaluationsCriterion(5000)
         )
+        self.options.declare("init_population_size", default=None)
 
     def _setup_driver(self, problem):
         super()._setup_driver(problem)
@@ -235,7 +236,7 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         random.seed(self.options["random_seed"])
         np.random.seed(self.options["random_seed"])
 
-        start_population = self.toolbox.population(self.population_size)
+        start_population = self.toolbox.population(self.options["init_population_size"] or self.population_size)
         population, logbook = nsga_main(
             population=start_population,
             toolbox=self.toolbox,
@@ -424,7 +425,7 @@ def nsga_main(population, toolbox, mu, halloffame=None, verbose=__debug__):
 
     # This is just to assign the crowding distance to the individuals
     # in the case of NSGA-II. No actual selection is done.
-    population = toolbox.select(population, len(population))
+    population = toolbox.select(population, mu)
 
     if halloffame is not None:
         halloffame.update(population)
