@@ -236,7 +236,9 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         random.seed(self.options["random_seed"])
         np.random.seed(self.options["random_seed"])
 
-        start_population = self.toolbox.population(self.options["init_population_size"] or self.population_size)
+        start_population = self.toolbox.population(
+            self.options["init_population_size"] or self.population_size
+        )
         population, logbook = nsga_main(
             population=start_population,
             toolbox=self.toolbox,
