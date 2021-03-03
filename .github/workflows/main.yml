@@ -99,6 +99,10 @@ jobs:
         with:
           name: package-${{ github.sha }}
           path: build-output
+      - name: Test Anaconda auth
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: anaconda --verbose --token $ANACONDA_TOKEN whoami
       - name: Upload to anaconda.org
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
