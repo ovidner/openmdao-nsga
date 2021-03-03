@@ -25,8 +25,14 @@ description:
 # Use `anaconda-project add-command` to add commands.
 #
 commands:
-  setup: {windows: pip install -e %PROJECT_DIR%, unix: pip install -e $PROJECT_DIR, env_spec: default}
-  tests: {windows: pytest, unix: pytest, env_spec: default}
+  setup:
+    windows: pip install -e %PROJECT_DIR%
+    unix: pip install -e $PROJECT_DIR
+    env_spec: default
+  tests:
+    windows: pytest
+    unix: pytest
+    env_spec: default
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -54,22 +60,22 @@ downloads: {}
 # Use `anaconda-project add-packages` to add packages.
 #
 packages:
-- python
-- numpy
-- pandas
-- xarray
-- pygmo
-- openmdao
-- openmdao-scop
-- deap
-- pytest
-- hypothesis
-- black
-- flake8
-- flake8-isort
-- pdbpp
-- pip:
-  - pymop
+  - python
+  - numpy
+  - pandas
+  - xarray
+  - pygmo
+  - openmdao
+  - openmdao-scop
+  - deap
+  - pytest
+  - hypothesis
+  - black
+  - flake8
+  - flake8-isort
+  - pdbpp
+  - pip:
+      - pymop
 
 #
 # In the channels section, list any Conda channel URLs to be searched
@@ -81,8 +87,8 @@ packages:
 #    - mychannel
 #
 channels:
-- conda-forge
-- ovidner
+  - conda-forge
+  - ovidner
 
 #
 # In the platforms section, list platforms the project should work on
@@ -90,9 +96,9 @@ channels:
 # Use `anaconda-project add-platforms` to add platforms.
 #
 platforms:
-- win-64
-- linux-64
-- osx-64
+  - win-64
+  - linux-64
+  - osx-64
 
 #
 # You can define multiple, named environment specs.
