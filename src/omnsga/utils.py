@@ -7,6 +7,7 @@ from itertools import chain
 
 import deap
 import numpy as np
+import pyDOE2
 from deap.base import Fitness
 
 
@@ -264,6 +265,41 @@ def init_population(count, individual_types, individual_bounds, fitness_class):
                     individual_types, individual_bounds.lower, individual_bounds.upper
                 )
             ],
+            fitness_class=fitness_class,
+        )
+
+
+def init_population_gsd(
+    min_count,
+    individual_types,
+    individual_bounds,
+    fitness_class,
+    cont_levels,
+    gsd_reduction,
+):
+    # Mad experiment with GSD
+    gsd_levels = [
+        int(upper - lower + 1) if type_ is not VariableType.CONTINUOUS else cont_levels
+        for (type_, lower, upper) in zip(
+            individual_types, individual_bounds.lower, individual_bounds.upper
+        )
+    ]
+
+    gsd_reduction = int(np.prod(gsd_levels) // min_count)
+    gsd_designs = pyDOE2.gsd(gsd_levels, gsd_reduction)
+    designs = gsd_designs.astype("O")
+
+    cont_mask = np.array(individual_types) == VariableType.CONTINUOUS
+    noncont_adder = np.array(individual_bounds.lower)
+
+    cont = np.linspace(individual_bounds.lower, individual_bounds.upper, cont_levels)
+
+    designs[cont_mask] = np.choose(gsd_designs[:, cont_mask], cont.T)
+    np.copyto(designs, gsd_designs + noncont_adder, where=~cont_mask)
+
+    for d in designs:
+        yield Individual(
+            d,
             fitness_class=fitness_class,
         )
 
