@@ -103,4 +103,4 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
         run: |
           [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
-          anaconda upload --verbose --user $ANACONDA_USER --token $ANACONDA_TOKEN $LABEL build-output/*/*.tar.bz2
+          anaconda --verbose --token $ANACONDA_TOKEN upload --user $ANACONDA_USER $LABEL build-output/*/*.tar.bz2
