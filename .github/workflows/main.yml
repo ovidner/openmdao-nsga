@@ -30,10 +30,38 @@ jobs:
           name: package-${{ github.sha }}
           path: build-output
 
-  upload:
-    # TODO: fix the tests so that I can't shoot myself in the foot too bad
-    # needs: test
+  test:
     needs: package
+    strategy:
+      matrix:
+        python:
+          - 3.9
+          - 3.8
+          - 3.7
+        openmdao:
+          - 3.11
+          - 3.10
+          - 3.9
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          channels: ovidner,conda-forge,defaults
+          channel-priority: strict
+      - run: conda install -y conda-build conda-verify
+      - name: Download the build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: package-${{ github.sha }}
+          path: build-output
+      - name: Test the package
+        run: conda build --extra-deps "python=${{ matrix.python }}" "openmdao=${{ matrix.openmdao }}" --test build-output/*/*.tar.bz2
+
+  upload:
+    needs: test
     runs-on: ubuntu-latest
     # if: github.event_name == 'release'
     defaults:
