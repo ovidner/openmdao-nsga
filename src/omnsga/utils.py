@@ -169,13 +169,13 @@ def stretch_array(array, shape):
 
 
 def random_ints(shape, lower, upper):
-    ret = np.empty(shape, dtype=np.int)
+    ret = np.empty(shape, dtype=int)
 
     lower = np.broadcast_to(lower, shape)
     upper = np.broadcast_to(upper, shape)
 
     for i in np.ndindex(*shape):
-        ret[i] = np.random.randint(lower[i], upper[i], dtype=np.int)
+        ret[i] = np.random.randint(lower[i], upper[i], dtype=int)
 
     return ret
 
@@ -227,7 +227,7 @@ def convert_individual_to_design_vars(
         ind_items = np.prod(shape, dtype=int)
         values = np.array(
             ind[:ind_items],
-            dtype=(np.float if type_ is VariableType.CONTINUOUS else np.int),
+            dtype=(float if type_ is VariableType.CONTINUOUS else int),
         ).reshape(shape)
 
         if type_.discrete and not type_.bounded:

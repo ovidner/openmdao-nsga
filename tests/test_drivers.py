@@ -71,7 +71,7 @@ def variable_st(draw):
 
     if type_.bounded:
         dtype, dtype_st, eps = (
-            (np.int, st.integers, 1) if type_.discrete else (np.float, st.floats, 1e-6)
+            (int, st.integers, 1) if type_.discrete else (float, st.floats, 1e-6)
         )
 
         lower = draw(
