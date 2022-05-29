@@ -22,7 +22,7 @@ requirements:
   build:
     - python
     - pip
-    - setuptools_scm
+    - setuptools-scm
   run:
     - deap
     - numpy
