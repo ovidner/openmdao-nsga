@@ -167,13 +167,6 @@ def stretch_array(array, shape):
     except ValueError:
         return np.reshape(array, shape)
 
-    missing_dims = len(shape) - array.ndim
-    indexer = (...,) + (np.newaxis,) * missing_dims
-
-    array = array[indexer]
-
-    return np.broadcast_to(array, shape)
-
 
 def random_ints(shape, lower, upper):
     ret = np.empty(shape, dtype=np.int)
