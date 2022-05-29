@@ -22,6 +22,7 @@ from .utils import (
     make_discrete_value_mappings,
     mate_disassembled,
     mutate_disassembled,
+    stretch_array,
 )
 
 
@@ -70,7 +71,11 @@ class DiscreteDriverMixin:
                 loc_idxs = indices
                 dist_idxs = slice(None)
 
-            desvar[loc_idxs] = np.atleast_1d(value)[dist_idxs]
+            # OpenMDAO insists on flattening some multi-dimensional design
+            # variables. I consider this to be a bug (or at least an instance of
+            # bad inter-operability with OMNSGA), but let's just work around that.
+            val = stretch_array(value, desvar[loc_idxs].shape)
+            desvar[loc_idxs] = val[dist_idxs]
 
             # Undo driver scaling when setting design var values into model.
             if self._has_scaling:

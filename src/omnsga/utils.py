@@ -149,7 +149,7 @@ class IndividualBounds:
 
 def individual_sequence(design_vars, design_var_meta):
     return chain.from_iterable(
-        np.broadcast_to(design_vars[name], meta["shape"]).flat
+        stretch_array(design_vars[name], meta["shape"]).flat
         for name, meta in design_var_meta.items()
     )
 
