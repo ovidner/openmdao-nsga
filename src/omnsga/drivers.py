@@ -5,7 +5,7 @@ from itertools import chain
 import numpy as np
 import pygmo
 from deap import algorithms, base, tools
-from openmdao.api import DOEDriver
+from openmdao.api import AnalysisError, DOEDriver
 from openmdao.core.driver import Driver, RecordingDebugging
 
 from .criteria import MaxEvaluationsCriterion
@@ -208,20 +208,31 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             self.set_design_var(name, value)
 
         with RecordingDebugging(self._get_name(), self.iter_count, self):
-            self._problem().model.run_solve_nonlinear()
+            success = True
+            try:
+                self._problem().model.run_solve_nonlinear()
+            except AnalysisError:
+                success = False
 
         self.iter_count += 1
 
-        return ObjectiveValueWithConstraintViolation(
-            objectives=tuple(
+        if success:
+            objectives = tuple(
                 chain.from_iterable(
                     x.flat for x in self.get_objective_values().values()
                 )
-            ),
-            constraint_violation=constraint_violation(
+            )
+            cv = constraint_violation(
                 values=self.get_constraint_values(),
                 meta=self._problem().model.get_constraints(),
-            ),
+            )
+        else:
+            objectives = tuple(np.inf for _ in range(self.num_objectives))
+            cv = np.inf
+
+        return ObjectiveValueWithConstraintViolation(
+            objectives=objectives,
+            constraint_violation=cv,
         )
 
     def evaluate_individual_cached(self, individual):
