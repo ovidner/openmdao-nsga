@@ -432,15 +432,6 @@ def make_discrete_value_mappings(design_var_meta):
         )
 
 
-def epsilonify(value, eps=np.finfo(float).eps):
-    value = np.copy(value)
-    if isinstance(value, np.ndarray):
-        value[value == 0.0] = eps
-    else:
-        value = value or eps
-    return value
-
-
 def constraint_violation(values, meta):
     keys = set(values.keys())
     assert keys == set(meta.keys())
@@ -451,16 +442,13 @@ def constraint_violation(values, meta):
         val = values[key]
 
         lower = var_meta["lower"]
-        lower_eps = epsilonify(lower)
         upper = var_meta["upper"]
-        upper_eps = epsilonify(upper)
         equals = var_meta["equals"]
-        equals_eps = epsilonify(equals)
 
-        total_violation += np.sum(np.abs(np.fmax(upper, val) / upper_eps - 1))
-        total_violation += np.sum(np.abs(np.fmin(lower, val) / lower_eps - 1))
+        total_violation += np.sum(np.abs(np.fmax(upper, val) - upper))
+        total_violation += np.sum(np.abs(np.fmin(lower, val) - lower))
         if equals is not None:
-            total_violation += np.sum(np.abs(val / equals_eps - 1))
+            total_violation += np.sum(np.abs(val - equals))
 
     assert total_violation >= 0.0
     return total_violation
