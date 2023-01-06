@@ -129,7 +129,11 @@ class IndividualBounds:
     @classmethod
     def from_design_var_meta(cls, design_var_meta):
         lower = {
-            name: (meta["lower"] if meta["type"].bounded else np.zeros(meta["shape"]))
+            name: (
+                meta["lower"]
+                if meta["type"].bounded
+                else np.zeros(meta["shape"], dtype=int)
+            )
             for name, meta in design_var_meta.items()
         }
         upper = {
