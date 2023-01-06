@@ -224,7 +224,7 @@ def convert_individual_to_design_vars(
     for name, meta in design_var_meta.items():
         shape = meta["shape"]
         type_ = meta["type"]
-        ind_items = np.prod(shape, dtype=int)
+        ind_items = np.prod(shape, dtype=int) or 1  # Shape might be ()
         values = np.array(
             ind[:ind_items],
             dtype=(float if type_ is VariableType.CONTINUOUS else int),
@@ -431,7 +431,7 @@ def make_discrete_value_mappings(design_var_meta):
             lambda x: _make_discrete_value_mapping(x, type_),
             axis=-1,
             arr=meta["values"],
-        )
+        ).reshape(meta["shape"])
 
 
 def constraint_violation(values, meta):
