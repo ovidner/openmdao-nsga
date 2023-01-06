@@ -1,4 +1,5 @@
 import random
+import traceback
 import warnings
 from copy import deepcopy
 from itertools import chain
@@ -195,7 +196,7 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         )
         self.toolbox = toolbox
 
-        self.evaluation_metadata = {"generation": 0}
+        self.evaluation_metadata = {"generation": 0, "success": 1, "msg": ""}
 
     def _get_recorder_metadata(self, case_name):
         metadata = super()._get_recorder_metadata(case_name)
@@ -209,11 +210,16 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             self.set_design_var(name, value)
 
         with RecordingDebugging(self._get_name(), self.iter_count, self):
-            success = True
             try:
                 self._problem().model.run_solve_nonlinear()
             except AnalysisError:
                 success = False
+                self.evaluation_metadata["success"] = 0
+                self.evaluation_metadata["msg"] = traceback.format_exc()
+            else:
+                success = True
+                self.evaluation_metadata["success"] = 1
+                self.evaluation_metadata["msg"] = ""
 
         self.iter_count += 1
 
