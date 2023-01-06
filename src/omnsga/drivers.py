@@ -1,9 +1,11 @@
 import copyreg
+import dataclasses
 import random
 import traceback
 import warnings
 from copy import deepcopy
 from itertools import chain
+from typing import Any, Sequence
 
 import numpy as np
 import pygmo
@@ -31,6 +33,147 @@ from .utils import (
 
 def default_nsga2_population_size(driver):
     return driver.individual_size * driver.num_objectives * 2
+
+
+MPI_REQUEST_TAG = 1
+MPI_RESPONSE_TAG = 2
+MPI_STOP_TAG = 3
+
+NO_RESULT = object()
+
+
+@dataclasses.dataclass(frozen=True)
+class RunRequestPayload:
+    job_id: int
+    args: Sequence = tuple()
+    kwargs: dict = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass(frozen=True)
+class RunResponsePayload:
+    rank: int
+    job_id: int
+    value: Any
+    error: list
+
+
+@dataclasses.dataclass(frozen=True)
+class MpiMessage:
+    action: str
+    payload: Any
+
+
+@dataclasses.dataclass(frozen=True)
+class MpiResponse:
+    action: str
+
+
+class MpiContext:
+    def __init__(self, toolbox, func, comm, master_rank=0) -> None:
+        self.func = func
+        self.toolbox = toolbox
+        self.comm = comm
+        self.rank = comm.rank
+        self.master_rank = master_rank
+        self.worker_ranks = [x for x in range(comm.Get_size()) if x != master_rank]
+        self.map = None
+
+    def __enter__(self):
+        if self.rank == self.master_rank:
+            self.map = self._map
+        return self
+
+    def __exit__(self) -> None:
+        if self.rank == self.master_rank:
+            self.comm.bcast(MpiMessage(action="stop", payload=None), tag=MPI_STOP_TAG)
+
+    def _map(self, func, *iterables):
+        if func is not self.func:
+            raise ValueError(
+                "Function used in map must same as the one used to initialize MpiContext."
+            )
+
+        (all_args,) = zip(*iterables)
+
+    def dispatch_all(self, cases):
+        results = {}
+        case_iter = enumerate(cases)
+
+        for rank in self.worker_ranks:
+            try:
+                case_idx, case = next(case_iter)
+            except StopIteration:
+                break
+
+            self.dispatch_job(rank=rank, job_id=case_idx, args=case)
+            results[case_idx] = NO_RESULT
+
+        if len(results) == 0:
+            return []
+
+        while True:
+            response: MpiMessage = self.comm.recv(tag=MPI_RESPONSE_TAG)
+            results[response.payload.job_id] = response.payload
+
+            try:
+                case_idx, case = next(case_iter)
+            except StopIteration:
+                pass
+            else:
+                # send new case to the last worker that finished
+                self.dispatch_job(
+                    rank=response.payload.rank,
+                    job_id=case_idx,
+                    args=case,
+                )
+                results[case_idx] = NO_RESULT
+
+    def dispatch_job(self, rank, job_id, args):
+        request = MpiMessage(
+            action="run",
+            payload=RunRequestPayload(
+                id=job_id,
+                args=args,
+            ),
+        )
+        self.comm.send(request, dest=rank, tag=MPI_REQUEST_TAG)
+
+    def work(self):
+        stop_request = self.comm.irecv(source=self.master_rank, tag=MPI_STOP_TAG)
+        while True:
+            if stop_request.Test():
+                break
+
+            request: MpiMessage = self.comm.recv(source=self.master_rank, tag=1)
+
+            if request.action == "ping":
+                self.comm.send(
+                    MpiMessage("ping", "pong!"),
+                )
+            elif request.action == "run":
+                try:
+                    value = self.func(*request.payload.args, **request.payload.kwargs)
+                    error = None
+                except Exception as exc:
+                    value = None
+                    error = list(
+                        traceback.TracebackException.from_exception(
+                            exc, capture_locals=True
+                        ).format()
+                    )
+
+                response = MpiMessage(
+                    action="run",
+                    payload=RunResponsePayload(
+                        rank=self.rank,
+                        job_id=request.action.job_id,
+                        value=value,
+                        error=error,
+                    ),
+                )
+                self.comm.send(response, dest=self.master_rank, tag=MPI_RESPONSE_TAG)
+            else:
+                raise ValueError(f"Unknown action: {request.action}")
 
 
 class DiscreteDriverMixin:
@@ -112,6 +255,7 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             "termination_criterion", default=MaxEvaluationsCriterion(5000)
         )
         self.options.declare("init_population_size", default=None)
+        self.options.declare("run_parallel", default=False)
 
     def _setup_driver(self, problem):
         super()._setup_driver(problem)
@@ -261,6 +405,21 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
         random.seed(self.options["random_seed"])
         np.random.seed(self.options["random_seed"])
 
+        if self.options["run_parallel"]:
+            from mpi4py import MPI
+            from mpi4py.futures import MPICommExecutor
+
+            with MPICommExecutor(MPI.COMM_WORLD, root=0) as executor:
+                if executor is not None:
+                    self.toolbox.register("map", executor.map)
+                    self._run_algo()
+
+        else:
+            self._run_algo()
+
+        return False
+
+    def _run_algo(self):
         start_population = self.toolbox.population(
             self.options["init_population_size"] or self.population_size
         )
@@ -270,8 +429,6 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             mu=self.population_size,
             verbose=self.options["verbose"],
         )
-
-        return False
 
 
 class Nsga2Driver(GenericNsgaDriver):
