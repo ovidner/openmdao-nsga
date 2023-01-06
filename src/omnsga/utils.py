@@ -75,6 +75,23 @@ class ObjectiveValueWithConstraintViolation:
 class ConstraintDominatedFitness(Fitness):
     feasibility_tolerance = 1e-12
 
+    @classmethod
+    def new_with_weights(cls, num_objectives):
+        return type(
+            "Fitness",
+            (cls,),
+            {"weights": (-1,) * num_objectives},
+        )
+
+    @classmethod
+    def pickle(cls, obj):
+        return cls, (len(obj.weights),)
+
+    @classmethod
+    def unpickle(cls, _cls, args):
+        (num_objectives,) = args
+        return cls.new_with_weights(num_objectives)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.constraint_violation = None
@@ -107,6 +124,14 @@ class ConstraintDominatedFitness(Fitness):
             return super().dominates(other, obj)
         else:
             return self.constraint_violation < other.constraint_violation
+
+
+class ConstraintDominatedFitnessMeta(type):
+    def __new__(cls, name, bases, dct, weights):
+        klass = super().__new__(cls, name, bases, dct)
+        klass.weights = weights
+
+        return klass
 
 
 class Individual(list):

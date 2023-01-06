@@ -1,3 +1,4 @@
+import copyreg
 import random
 import traceback
 import warnings
@@ -138,10 +139,11 @@ class GenericNsgaDriver(DiscreteDriverMixin, Driver):
             obj["size"] for obj in problem.model.get_objectives().values()
         )
 
-        fitness_class = type(
-            "Fitness",
-            (ConstraintDominatedFitness,),
-            {"weights": (-1,) * self.num_objectives},
+        fitness_class = ConstraintDominatedFitness.new_with_weights(self.num_objectives)
+        copyreg.pickle(
+            fitness_class,
+            ConstraintDominatedFitness.pickle,
+            ConstraintDominatedFitness.unpickle,
         )
 
         individual_types = tuple(individual_types_sequence(design_var_meta))
