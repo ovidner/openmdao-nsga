@@ -1,4 +1,5 @@
 import random
+import warnings
 from copy import deepcopy
 from itertools import chain
 
@@ -414,16 +415,20 @@ def ind_stats_with_cv(ind):
 
 def pop_hv(algorithm=None):
     def func(fitness_values):
-        hv = pygmo.hypervolume(fitness_values)
-        ref_point = hv.refpoint(offset=1)
-        # https://esa.github.io/pygmo/tutorials/advanced_hypervolume_computation_and_analysis.html#pushing-efficiency-further
-        hv.copy_points = False
-        # hv.set_verify(False)
+        try:
+            hv = pygmo.hypervolume(fitness_values)
+            ref_point = hv.refpoint(offset=1)
+            # https://esa.github.io/pygmo/tutorials/advanced_hypervolume_computation_and_analysis.html#pushing-efficiency-further
+            hv.copy_points = False
+            # hv.set_verify(False)
 
-        if algorithm:
-            return hv.compute(ref_point, hv_algo=algorithm)
-        else:
-            return hv.compute(ref_point)
+            if algorithm:
+                return hv.compute(ref_point, hv_algo=algorithm)
+            else:
+                return hv.compute(ref_point)
+        except Exception as exc:
+            warnings.warn(f"Error computing hypervolume: {exc}")
+            return np.nan
 
     return func
 
