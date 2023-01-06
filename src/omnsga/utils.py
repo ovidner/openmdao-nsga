@@ -136,7 +136,7 @@ class IndividualBounds:
             name: (
                 meta["upper"]
                 if meta["type"].bounded
-                else np.vectorize(len)(meta["values"]) - 1
+                else np.apply_along_axis(len, axis=-1, arr=meta["values"]) - 1
             )
             for name, meta in design_var_meta.items()
         }
@@ -427,8 +427,10 @@ def make_discrete_value_mappings(design_var_meta):
         if type_.bounded:
             continue
 
-        yield name, np.vectorize(lambda x: _make_discrete_value_mapping(x, type_))(
-            meta["values"]
+        yield name, np.apply_along_axis(
+            lambda x: _make_discrete_value_mapping(x, type_),
+            axis=-1,
+            arr=meta["values"],
         )
 
 
