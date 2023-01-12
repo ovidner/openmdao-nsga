@@ -64,7 +64,8 @@ jobs:
         run: conda build --extra-deps "python=${{ matrix.python }}" "openmdao=${{ matrix.openmdao }}" --test build-output/*/*.tar.bz2
 
   upload:
-    needs: test
+    # TODO: make this more robust by depending on passed tests
+    needs: package
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     defaults:
