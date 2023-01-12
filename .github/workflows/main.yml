@@ -15,14 +15,16 @@ jobs:
         with:
           channels: ovidner,conda-forge,defaults
           channel-priority: strict
-      - run: conda install -y conda-build conda-verify
+          miniforge-variant: Mambaforge
+          use-mamba: true
+      - run: mamba install -y boa
       - name: Retrieve the source code
         uses: actions/checkout@v2
         with:
           # Include all history to get tags etc.
           fetch-depth: 0
       - name: Build the package
-        run: conda build conda-recipe --no-test --output-folder build-output
+        run: mamba mambabuild conda-recipe --no-test --output-folder build-output
       - name: Reduce the size of the build artifact
         run: rm -rf build-output/*/.cache
       - name: Upload the build artifact
@@ -70,7 +72,10 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install -y anaconda-client
+        with:
+          miniforge-variant: Mambaforge
+          use-mamba: true
+      - run: mamba install -y anaconda-client
       - name: Download the build artifacts
         uses: actions/download-artifact@v2
         with:
